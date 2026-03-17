@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   DEFAULT THEME — LIGHT
+   ============================================================ */
+:root,
+.theme-default {
+  --page:              249 250 251;   /* gray-50  */
+  --surface:           255 255 255;   /* white    */
+  --raised:            249 250 251;   /* gray-50  */
+  --sidebar:           17 24 39;      /* gray-900 */
+  --sidebar-rim:       55 65 81;      /* gray-700 */
+  --sidebar-nav:       209 213 219;   /* gray-300 */
+  --sidebar-mute:      107 114 128;   /* gray-500 */
+  --sidebar-act:       55 65 81;      /* gray-700 */
+  --text-primary:      17 24 39;      /* gray-900 */
+  --text-secondary:    107 114 128;   /* gray-500 */
+  --text-muted:        156 163 175;   /* gray-400 */
+  --line:              229 231 235;   /* gray-200 */
+  --input-border:      209 213 219;   /* gray-300 */
+  --input-bg:          255 255 255;
+  --accent:            37 99 235;     /* blue-600 */
+  --accent-dim:        29 78 216;     /* blue-700 */
+  --on-accent:         255 255 255;
+  --accent-faint:      239 246 255;   /* blue-50  */
+  --accent-text-color: 37 99 235;     /* blue-600 */
+}
+
+/* ============================================================
+   DEFAULT THEME — DARK
+   ============================================================ */
+.theme-default.dark {
+  --page:              17 24 39;      /* gray-900 */
+  --surface:           31 41 55;      /* gray-800 */
+  --raised:            17 24 39;      /* gray-900 */
+  --sidebar:           3 7 18;        /* near-black */
+  --sidebar-rim:       17 24 39;      /* gray-900 */
+  --sidebar-nav:       156 163 175;   /* gray-400 */
+  --sidebar-mute:      75 85 99;      /* gray-600 */
+  --sidebar-act:       31 41 55;      /* gray-800 */
+  --text-primary:      249 250 251;   /* gray-50  */
+  --text-secondary:    156 163 175;   /* gray-400 */
+  --text-muted:        107 114 128;   /* gray-500 */
+  --line:              55 65 81;      /* gray-700 */
+  --input-border:      75 85 99;      /* gray-600 */
+  --input-bg:          31 41 55;      /* gray-800 */
+  --accent:            59 130 246;    /* blue-500 */
+  --accent-dim:        37 99 235;     /* blue-600 */
+  --on-accent:         255 255 255;
+  --accent-faint:      23 37 84;
+  --accent-text-color: 96 165 250;    /* blue-400 */
+}
+
+/* ============================================================
+   SHODAN THEME — inherently dark, ignores light/dark toggle
+   ============================================================ */
+.theme-shodan,
+.theme-shodan.dark {
+  --page:              6 6 6;
+  --surface:           12 12 12;
+  --raised:            20 20 20;
+  --sidebar:           0 0 0;
+  --sidebar-rim:       28 0 0;
+  --sidebar-nav:       139 0 0;       /* dark red */
+  --sidebar-mute:      80 0 0;
+  --sidebar-act:       28 0 0;
+  --text-primary:      212 212 212;
+  --text-secondary:    136 136 136;
+  --text-muted:        80 80 80;
+  --line:              28 28 28;
+  --input-border:      50 0 0;
+  --input-bg:          16 16 16;
+  --accent:            185 0 0;
+  --accent-dim:        140 0 0;
+  --on-accent:         255 255 255;
+  --accent-faint:      24 0 0;
+  --accent-text-color: 239 68 68;     /* red-500 */
+}
+
+/* ============================================================
+   Shodan sidebar: active nav text is bright red
+   ============================================================ */
+.theme-shodan aside a.active-nav,
+.theme-shodan aside a[aria-current] {
+  color: #ff3333;
+}
+
+/* ============================================================
+   Shodan: terminal scan-line atmosphere on the sidebar
+   ============================================================ */
+.theme-shodan aside {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 0, 0, 0.015) 2px,
+    rgba(255, 0, 0, 0.015) 4px
+  );
+}
+
+/* ============================================================
+   Smooth theme transitions
+   ============================================================ */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+/* Don't transition transforms / opacity (breaks animations) */
+.transition-none, [class*="translate-"], [class*="rotate-"], [class*="scale-"] {
+  transition: none !important;
+}

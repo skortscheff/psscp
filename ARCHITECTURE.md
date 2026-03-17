@@ -242,6 +242,18 @@ All runtime configuration (cluster credentials, flavors, feature flags) is store
 
 PSSCP has five interdependent services (API, worker, frontend, PostgreSQL, Redis). Docker Compose defines the entire stack in a single file, handles dependency ordering, network isolation, and volume management. This runs identically on any Linux host with Docker installed, removing environment-specific setup friction.
 
-### Task queue: Celery vs ARQ
+### Task queue: Celery
 
-**TBD** — decision to be finalised before implementation. Celery is mature and battle-tested with broad ecosystem support; ARQ is lighter and async-native, which aligns better with a FastAPI codebase. Record the decision here once made.
+**Decision: Celery.** Celery was chosen over ARQ because of its maturity, battle-tested retry / backoff primitives (`autoretry_for`, `max_retries`, `countdown`), and the breadth of its operational tooling (Flower, task routing, canvas). ARQ's async-native design is appealing alongside FastAPI, but the priority for v0.1 is reliable retries and observability rather than async worker concurrency — both of which Celery handles well.
+
+Workers are configured with `task_acks_late=True` and `worker_prefetch_multiplier=1` to prevent message loss if a worker dies mid-task. Exponential backoff is applied via `countdown=2 ** self.request.retries`.
+
+### IP address discovery via QEMU guest agent
+
+After a VM is started, the worker polls the Proxmox QEMU guest agent API (`/nodes/{node}/qemu/{vmid}/agent/network-get-interfaces`) every 5 seconds for up to 60 seconds. The first non-loopback IPv4 address is stored in `vms.ip_address`. If the agent is not running (e.g. the template does not include `qemu-guest-agent`), the column is left `null` and the job still succeeds.
+
+**Requirement:** VM templates must have `qemu-guest-agent` installed and the service enabled for IP auto-population to work.
+
+### Template discovery (live from Proxmox)
+
+Templates are **not** stored in the database. The `TemplateRegistry` class queries the Proxmox API on demand (`GET /clusters/{id}/templates`) and returns a list of `{id, name, os_type}` records. This avoids stale data and keeps the data model simple. The frontend fetches this list when the user opens the VM creation form.
