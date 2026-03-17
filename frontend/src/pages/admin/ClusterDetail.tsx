@@ -46,6 +46,7 @@ export function AdminClusterDetail() {
     queryFn: () => clustersApi.templates(id!),
     enabled: !!cluster,
     retry: false,
+    staleTime: 0,
   })
 
   const testMutation = useMutation({
@@ -246,7 +247,10 @@ export function AdminClusterDetail() {
           ) : templatesError ? (
             <p className="text-sm text-amber-500">Could not load templates — run a connectivity test to check the connection.</p>
           ) : templates.length === 0 ? (
-            <p className="text-sm text-muted">No templates found on this cluster. In Proxmox, right-click a VM and select <em>Convert to Template</em>.</p>
+            <div className="text-sm space-y-1">
+              <p className="text-muted">No templates found on this cluster.</p>
+              <p className="text-muted">If you have templates in Proxmox, check that the API token has <span className="font-mono text-secondary">VM.Audit</span> permission on path <span className="font-mono text-secondary">/vms</span> (Datacenter → Permissions → Add).</p>
+            </div>
           ) : (
             <table className="min-w-full text-sm divide-y divide-line">
               <thead>

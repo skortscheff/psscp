@@ -46,3 +46,21 @@ class ClusterTestResult(BaseModel):
     nodes: list[ClusterNodeInfo] = []
     sdn_detected: bool = False
     template_count: int = 0
+
+class LiveVM(BaseModel):
+    vmid: int
+    name: str
+    status: str
+    node: str
+    type: str  # 'qemu' or 'lxc'
+    template: bool
+    cpu: Optional[float] = None
+    mem: Optional[int] = None
+    maxmem: Optional[int] = None
+    uptime: Optional[int] = None
+
+class ClusterLiveResources(BaseModel):
+    cluster_id: str
+    cluster_name: str
+    error: Optional[str] = None
+    vms: list[LiveVM] = []

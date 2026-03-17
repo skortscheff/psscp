@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { Cluster, ClusterDetail, ClusterTestResult, Flavor, Network, VM, Job, User, SystemConfig, SystemStats, TemplateInfo, JobResponse } from './types'
+import type { Cluster, ClusterDetail, ClusterTestResult, ClusterLiveResources, DashboardData, Flavor, Network, VM, Job, User, SystemConfig, SystemStats, TemplateInfo, JobResponse } from './types'
 
 // Clusters
 export const clustersApi = {
@@ -10,6 +10,7 @@ export const clustersApi = {
   delete: (id: string) => apiClient.delete<JobResponse>(`/clusters/${id}`).then(r => r.data),
   templates: (id: string) => apiClient.get<TemplateInfo[]>(`/clusters/${id}/templates`).then(r => r.data),
   test: (id: string) => apiClient.get<ClusterTestResult>(`/clusters/${id}/test`).then(r => r.data),
+  liveResources: () => apiClient.get<ClusterLiveResources[]>('/clusters/live-resources').then(r => r.data),
 }
 
 // Flavors
@@ -63,6 +64,7 @@ export const systemApi = {
   updateConfig: (data: unknown) => apiClient.patch<SystemConfig>('/system/config', data).then(r => r.data),
   health: () => apiClient.get('/system/health').then(r => r.data),
   stats: () => apiClient.get<SystemStats>('/system/stats').then(r => r.data),
+  dashboard: () => apiClient.get<DashboardData>('/system/dashboard').then(r => r.data),
   setupStatus: () => apiClient.get<{ needs_setup: boolean }>('/system/setup-status').then(r => r.data),
   setup: (data: { email: string; password: string }) =>
     apiClient.post<{ access_token: string; token_type: string; expires_in: number }>('/system/setup', data).then(r => r.data),

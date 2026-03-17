@@ -110,6 +110,69 @@ export interface TemplateInfo {
   os_type: string | null
 }
 
+export interface DashboardNodeInfo {
+  cluster_id: string
+  cluster_name: string
+  node: string
+  status: string
+  cpu: number
+  maxcpu: number
+  mem: number
+  maxmem: number
+  disk: number
+  maxdisk: number
+  uptime: number
+}
+
+export interface DashboardLiveVM {
+  vmid: number
+  name: string
+  status: string
+  node: string
+  cluster_name: string
+  cpu: number
+  mem: number
+  maxmem: number
+  maxcpu: number
+  uptime: number
+  template: boolean
+}
+
+export interface DashboardData {
+  vm_total: number
+  vm_running: number
+  vm_stopped: number
+  vm_provisioning: number
+  vm_error: number
+  jobs_active: number
+  jobs_failed: number
+  cluster_count: number
+  user_count: number
+  nodes: DashboardNodeInfo[]
+  live_vms: DashboardLiveVM[]
+  cluster_errors: Record<string, string>
+}
+
+export interface LiveVM {
+  vmid: number
+  name: string
+  status: string
+  node: string
+  type: string
+  template: boolean
+  cpu: number | null
+  mem: number | null
+  maxmem: number | null
+  uptime: number | null
+}
+
+export interface ClusterLiveResources {
+  cluster_id: string
+  cluster_name: string
+  error: string | null
+  vms: LiveVM[]
+}
+
 export interface SystemStats {
   vm_total: number
   vm_running: number

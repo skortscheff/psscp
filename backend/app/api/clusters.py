@@ -10,6 +10,7 @@ from app.models.network import Network
 from app.schemas.clusters import (
     ClusterCreate, ClusterUpdate, ClusterResponse,
     ClusterDetailResponse, ClusterTestResult, ClusterNodeInfo,
+    ClusterLiveResources, LiveVM,
 )
 from app.schemas.common import JobResponse
 from app.services.clusters import enqueue_register_cluster, enqueue_delete_cluster
@@ -27,6 +28,37 @@ def create_cluster(body: ClusterCreate, db: Session = Depends(get_db), admin: Us
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cluster name already taken")
     return enqueue_register_cluster(db, admin, body)
+
+@router.get("/live-resources", response_model=list[ClusterLiveResources])
+def live_resources(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    from app.driver.proxmox_client import ProxmoxClient
+    clusters = db.exec(select(Cluster).where(Cluster.is_active == True)).all()
+    result = []
+    for cluster in clusters:
+        entry = ClusterLiveResources(cluster_id=str(cluster.id), cluster_name=cluster.name)
+        try:
+            client = ProxmoxClient(cluster)
+            api = client.get_api()
+            resources = api.cluster.resources.get()
+            for r in resources:
+                if r.get("type") not in ("qemu", "lxc"):
+                    continue
+                entry.vms.append(LiveVM(
+                    vmid=int(r.get("vmid", 0)),
+                    name=r.get("name", f"vm-{r.get('vmid')}"),
+                    status=r.get("status", "unknown"),
+                    node=r.get("node", ""),
+                    type=r.get("type", "qemu"),
+                    template=bool(r.get("template", 0)),
+                    cpu=r.get("cpu"),
+                    mem=r.get("mem"),
+                    maxmem=r.get("maxmem"),
+                    uptime=r.get("uptime"),
+                ))
+        except Exception as e:
+            entry.error = str(e)
+        result.append(entry)
+    return result
 
 @router.get("/{cluster_id}", response_model=ClusterDetailResponse)
 def get_cluster(cluster_id: str, db: Session = Depends(get_db), admin: User = Depends(require_admin)):

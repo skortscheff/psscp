@@ -78,6 +78,113 @@ def health(db: Session = Depends(get_db)):
         content={"status": overall, "database": db_status, "redis": redis_status, "version": settings.APP_VERSION},
     )
 
+class DashboardNodeInfo(BaseModel):
+    cluster_id: str
+    cluster_name: str
+    node: str
+    status: str
+    cpu: float
+    maxcpu: int
+    mem: int
+    maxmem: int
+    disk: int
+    maxdisk: int
+    uptime: int
+
+class DashboardLiveVM(BaseModel):
+    vmid: int
+    name: str
+    status: str
+    node: str
+    cluster_name: str
+    cpu: float
+    mem: int
+    maxmem: int
+    maxcpu: int
+    uptime: int
+    template: bool
+
+class DashboardData(BaseModel):
+    vm_total: int
+    vm_running: int
+    vm_stopped: int
+    vm_provisioning: int
+    vm_error: int
+    jobs_active: int
+    jobs_failed: int
+    cluster_count: int
+    user_count: int
+    nodes: list[DashboardNodeInfo] = []
+    live_vms: list[DashboardLiveVM] = []
+    cluster_errors: dict[str, str] = {}
+
+@router.get("/dashboard", response_model=DashboardData)
+def get_dashboard(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    from app.driver.proxmox_client import ProxmoxClient
+
+    # --- DB stats ---
+    def vm_count(s: VMStatus) -> int:
+        return db.exec(select(func.count()).select_from(VM).where(VM.status == s)).one()
+
+    vm_running = vm_count(VMStatus.running)
+    vm_stopped = vm_count(VMStatus.stopped)
+    vm_provisioning = vm_count(VMStatus.provisioning)
+    vm_error = vm_count(VMStatus.error)
+
+    data = DashboardData(
+        vm_total=vm_running + vm_stopped + vm_provisioning + vm_error,
+        vm_running=vm_running,
+        vm_stopped=vm_stopped,
+        vm_provisioning=vm_provisioning,
+        vm_error=vm_error,
+        jobs_active=db.exec(select(func.count()).select_from(Job).where(Job.status.in_([JobStatus.running, JobStatus.pending]))).one(),
+        jobs_failed=db.exec(select(func.count()).select_from(Job).where(Job.status == JobStatus.failed)).one(),
+        cluster_count=db.exec(select(func.count()).select_from(Cluster).where(Cluster.is_active == True)).one(),
+        user_count=db.exec(select(func.count()).select_from(User).where(User.is_active == True)).one(),
+    )
+
+    # --- Live Proxmox data ---
+    clusters = db.exec(select(Cluster).where(Cluster.is_active == True)).all()
+    for cluster in clusters:
+        try:
+            client = ProxmoxClient(cluster)
+            api = client.get_api()
+            resources = api.cluster.resources.get()
+            for r in resources:
+                rtype = r.get("type")
+                if rtype == "node":
+                    data.nodes.append(DashboardNodeInfo(
+                        cluster_id=str(cluster.id),
+                        cluster_name=cluster.name,
+                        node=r.get("node", ""),
+                        status=r.get("status", "unknown"),
+                        cpu=r.get("cpu", 0),
+                        maxcpu=r.get("maxcpu", 0),
+                        mem=r.get("mem", 0),
+                        maxmem=r.get("maxmem", 0),
+                        disk=r.get("disk", 0),
+                        maxdisk=r.get("maxdisk", 0),
+                        uptime=r.get("uptime", 0),
+                    ))
+                elif rtype in ("qemu", "lxc"):
+                    data.live_vms.append(DashboardLiveVM(
+                        vmid=int(r.get("vmid", 0)),
+                        name=r.get("name", f"vm-{r.get('vmid')}"),
+                        status=r.get("status", "unknown"),
+                        node=r.get("node", ""),
+                        cluster_name=cluster.name,
+                        cpu=r.get("cpu", 0),
+                        mem=r.get("mem", 0),
+                        maxmem=r.get("maxmem", 0),
+                        maxcpu=r.get("maxcpu", 1),
+                        uptime=r.get("uptime", 0),
+                        template=bool(r.get("template", 0)),
+                    ))
+        except Exception as e:
+            data.cluster_errors[cluster.name] = str(e)
+
+    return data
+
 @router.get("/stats")
 def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     is_admin = current_user.role == UserRole.admin

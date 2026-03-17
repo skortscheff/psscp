@@ -13,6 +13,7 @@ const navItems = [
 ]
 
 const adminItems = [
+  { to: '/admin/resources', label: 'Resources' },
   { to: '/admin/clusters', label: 'Clusters' },
   { to: '/admin/flavors', label: 'Flavors' },
   { to: '/admin/networks', label: 'Networks' },

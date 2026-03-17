@@ -16,6 +16,7 @@ import { AdminFlavors } from './pages/admin/Flavors'
 import { AdminNetworks } from './pages/admin/Networks'
 import { AdminUsers } from './pages/admin/Users'
 import { AdminConfig } from './pages/admin/Config'
+import { AdminResources } from './pages/admin/Resources'
 
 export function App() {
   return (
@@ -38,6 +39,7 @@ export function App() {
             <Route path="/admin/flavors" element={<AdminFlavors />} />
             <Route path="/admin/networks" element={<AdminNetworks />} />
             <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/resources" element={<AdminResources />} />
             <Route path="/admin/config" element={<AdminConfig />} />
           </Route>
         </Route>
