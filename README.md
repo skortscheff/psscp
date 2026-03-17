@@ -72,19 +72,24 @@ For detailed component descriptions, entity schemas, and design decisions, see [
 ### Multi-Cluster Support
 - Connect and manage multiple Proxmox clusters
 - Dynamic capability detection per cluster
+- Admin cluster management: add, edit, and remove clusters via UI
 
 ### Optional SDN Networking
 - Standard bridge-based networking (default, always available)
 - Advanced VXLAN networking via Proxmox SDN (opt-in, auto-detected per cluster)
 
-### Monitoring & Dashboards
-- Cluster resource usage (CPU, RAM, storage)
+### Live Resource Dashboards
+- Real-time cluster resource usage (CPU, RAM, storage) pulled directly from Proxmox
+- Per-node and per-VM resource breakdowns
 - Per-user VM counts and consumption
-- Optional Prometheus scraping and embedded Grafana dashboards
 
 ### Activity Tracking
 - Real-time job progress with live log output
 - Full audit trail of all actions
+
+### Admin Tooling
+- Full admin UI for cluster, flavor, network, and system configuration management
+- Per-user VM limits and global feature toggles
 
 ---
 
@@ -198,12 +203,18 @@ For full entity schemas, see [ARCHITECTURE.md § Data Model](ARCHITECTURE.md#dat
 
 ---
 
-## Limitations (v0.1)
+## Current Version (v0.5)
 
-- No billing or cost tracking
-- No auto-scaling
-- Limited SDN features (no BGP/EVPN)
-- No Terraform integration
+The following capabilities are live and fully implemented:
+
+- **VM lifecycle** — create, start, stop, reboot, delete via self-service UI
+- **Live resource dashboards** — real-time cluster CPU/RAM/storage pulled from Proxmox
+- **Multi-cluster support** — connect and manage multiple Proxmox clusters
+- **Async job model** — all Proxmox operations are queued and tracked; UI shows real-time progress
+- **Admin tooling** — manage clusters, flavors, networks, users, and system configuration through the UI
+- **JWT authentication** — short-lived access tokens with refresh; role-based access (Admin / User)
+
+See [ROADMAP.md](ROADMAP.md) for planned features in v0.6–v1.0.
 
 ---
 
@@ -223,3 +234,4 @@ For full entity schemas, see [ARCHITECTURE.md § Data Model](ARCHITECTURE.md#dat
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Component breakdown, entity schemas, job lifecycle, auth flow, ADRs |
 | [API_SPEC.md](API_SPEC.md) | Full HTTP API reference, request/response shapes, error format |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, test commands, code conventions, migration workflow |
+| [ROADMAP.md](ROADMAP.md) | Planned features and milestones for v0.6–v1.0 |
