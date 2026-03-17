@@ -116,16 +116,27 @@ For detailed component descriptions, entity schemas, and design decisions, see [
 ### Quick Start
 
 ```bash
+git clone https://github.com/skortscheff/psscp.git
+cd psscp
 ./setup.sh
 ```
 
-`setup.sh` auto-generates a `.env` with secure random secrets and starts the stack. Open the web UI at `http://<host>` and follow the setup wizard.
+`setup.sh` checks prerequisites, auto-generates `.env` with secure random secrets, starts the stack, and waits until the API is healthy. Open `http://localhost` and follow the setup wizard.
 
-**Manual start** (if you already have a `.env`):
+### Common Commands
 
-```bash
-docker compose up -d
-```
+| Command | Description |
+|---|---|
+| `make install` | First-time setup (same as `./setup.sh`) |
+| `make update` | Pull latest, rebuild, and redeploy |
+| `make status` | Show running containers |
+| `make logs` | Tail all service logs |
+| `make logs-api` | Tail API logs only |
+| `make stop` | Stop all services |
+| `make restart` | Restart without rebuilding |
+| `make clean` | Tear down and delete all data |
+
+Run `make` with no arguments to see the full list.
 
 ---
 
