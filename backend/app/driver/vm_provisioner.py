@@ -1,5 +1,8 @@
+import logging
 import time
 from app.driver.proxmox_client import ProxmoxClient
+
+logger = logging.getLogger(__name__)
 
 class VMProvisioner:
     @staticmethod
@@ -25,6 +28,7 @@ class VMProvisioner:
                         )
                         return vmid
             except Exception:
+                logger.warning("Failed to query node %s while searching for template %s", node_name, template_id, exc_info=True)
                 continue
         raise RuntimeError(f"Template {template_id} not found on any node")
 
@@ -44,6 +48,7 @@ class VMProvisioner:
                         )
                         return
             except Exception:
+                logger.warning("Failed to query node %s while configuring VM %s", node_name, vmid, exc_info=True)
                 continue
 
     @staticmethod
@@ -57,6 +62,7 @@ class VMProvisioner:
                     if vm["vmid"] == vmid:
                         return node_name
             except Exception:
+                logger.warning("Failed to query node %s while locating VM %s", node_name, vmid, exc_info=True)
                 continue
         raise RuntimeError(f"VM {vmid} not found on any node")
 
@@ -103,5 +109,5 @@ class VMProvisioner:
                     if ip_info.get("ip-address-type") == "ipv4":
                         return ip_info["ip-address"]
         except Exception:
-            pass
+            logger.warning("Failed to retrieve IP address via guest agent for VM %s", vmid, exc_info=True)
         return None

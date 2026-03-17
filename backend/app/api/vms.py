@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from app.core.deps import get_db, get_current_user
 from app.models.user import User, UserRole
 from app.models.vm import VM, VMStatus
 from app.models.network import Network, NetworkType
 from app.models.cluster import Cluster
+from app.models.system_config import SystemConfiguration, SYSTEM_CONFIG_ID
 from app.schemas.vms import VMCreate, VMResponse, VMDetailResponse
 from app.schemas.common import JobResponse
 from app.services.vms import enqueue_create_vm, enqueue_delete_vm, enqueue_vm_action
@@ -27,6 +28,17 @@ def list_vms(
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED, response_model=JobResponse)
 def create_vm(body: VMCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.admin:
+        vm_count = db.exec(
+            select(func.count(VM.id)).where(VM.user_id == current_user.id, VM.status != VMStatus.deleted)
+        ).one()
+        sys_config = db.get(SystemConfiguration, SYSTEM_CONFIG_ID)
+        limit = sys_config.max_vms_per_user if sys_config else 10
+        if vm_count >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"VM quota exceeded (limit: {limit})",
+            )
     if body.network_id:
         network = db.get(Network, body.network_id)
         if network and network.type == NetworkType.vxlan:

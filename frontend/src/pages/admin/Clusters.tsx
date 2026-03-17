@@ -142,6 +142,12 @@ function RegisterClusterModal({ onClose, onJobCreated }: { onClose: () => void; 
           Verify TLS certificate
           <span className="text-xs text-muted">(uncheck only for self-signed certs in lab environments)</span>
         </label>
+        {!form.tls_verify && (
+          <div className="flex items-start gap-2 rounded border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-600 dark:text-yellow-400">
+            <span className="mt-0.5 shrink-0">⚠</span>
+            <span>Warning: Disabling TLS verification exposes cluster communication to man-in-the-middle attacks. Only use in isolated lab environments.</span>
+          </div>
+        )}
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <button onClick={onClose} className="px-4 py-2 text-sm border border-line rounded text-secondary hover:text-primary hover:bg-raised">Cancel</button>

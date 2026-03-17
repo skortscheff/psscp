@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime, timezone
 from celery import Task
@@ -13,6 +14,8 @@ from app.driver.proxmox_client import ProxmoxClient
 from app.driver.vm_provisioner import VMProvisioner
 from app.driver.sdn_manager import SDNManager
 import sqlalchemy
+
+logger = logging.getLogger(__name__)
 
 
 def _log(db: Session, job: Job, message: str) -> None:
@@ -50,6 +53,7 @@ def create_vm_task(self: Task, job_id: str, vm_id: str, template_id: str) -> Non
 
         _set_status(db, job, JobStatus.running, 0)
         _log(db, job, f"Starting VM creation: {vm.name}")
+        logger.info("Starting VM creation", extra={"job_id": job_id, "vm_id": vm_id})
 
         try:
             client = ProxmoxClient(cluster)
@@ -61,6 +65,7 @@ def create_vm_task(self: Task, job_id: str, vm_id: str, template_id: str) -> Non
             db.commit()
 
             _log(db, job, f"Cloning template {template_id} as VMID {new_vmid}")
+            logger.info("Cloning template", extra={"job_id": job_id, "vm_id": vm_id, "template_id": template_id, "new_vmid": new_vmid})
             VMProvisioner.clone_template(client, int(template_id), new_vmid, vm.name)
             _set_status(db, job, JobStatus.running, 20)
             _log(db, job, "Template cloned")
@@ -95,8 +100,10 @@ def create_vm_task(self: Task, job_id: str, vm_id: str, template_id: str) -> Non
             db.commit()
             _set_status(db, job, JobStatus.success, 100)
             _log(db, job, f"VM running. IP: {ip or 'unavailable'}")
+            logger.info("VM creation succeeded", extra={"job_id": job_id, "vm_id": vm_id, "ip": ip})
 
         except Exception as exc:
+            logger.error("VM creation failed", extra={"job_id": job_id, "vm_id": vm_id}, exc_info=True)
             _log(db, job, f"Error: {exc}")
             vm.status = VMStatus.error
             db.add(vm)
@@ -117,6 +124,7 @@ def delete_vm_task(self: Task, job_id: str, vm_id: str) -> None:
             return
         _set_status(db, job, JobStatus.running, 0)
         _log(db, job, "Deleting VM")
+        logger.info("Starting VM deletion", extra={"job_id": job_id, "vm_id": vm_id})
         try:
             if vm.proxmox_vmid:
                 cluster = db.get(Cluster, vm.cluster_id)
@@ -125,14 +133,16 @@ def delete_vm_task(self: Task, job_id: str, vm_id: str) -> None:
                     VMProvisioner.stop_vm(client, vm.proxmox_vmid)
                     time.sleep(2)
                 except Exception:
-                    pass
+                    logger.warning("Could not stop VM before deletion (may already be stopped)", extra={"job_id": job_id, "vm_id": vm_id}, exc_info=True)
                 VMProvisioner.delete_vm(client, vm.proxmox_vmid)
             vm.status = VMStatus.deleted
             db.add(vm)
             db.commit()
             _set_status(db, job, JobStatus.success, 100)
             _log(db, job, "VM deleted")
+            logger.info("VM deletion succeeded", extra={"job_id": job_id, "vm_id": vm_id})
         except Exception as exc:
+            logger.error("VM deletion failed", extra={"job_id": job_id, "vm_id": vm_id}, exc_info=True)
             _log(db, job, f"Error: {exc}")
             try:
                 raise self.retry(exc=exc, countdown=2 ** self.request.retries)

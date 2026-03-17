@@ -105,13 +105,22 @@ def test_full_vm_lifecycle_via_api(api_session):
     assert r.status_code == 202, r.text
     job_id = r.json()["job_id"]
 
-    # Poll job briefly (we don't wait for full success without real Proxmox)
-    for _ in range(5):
+    # Poll until the job reaches a terminal state (verifies the job pipeline ran, not Proxmox connectivity)
+    terminal_status = None
+    for _ in range(30):
         jr = api_session.get(f"{base}/jobs/{job_id}")
         assert jr.status_code == 200
-        if jr.json()["status"] in ("success", "failed", "running"):
+        job_status = jr.json()["status"]
+        if job_status in ("success", "failed"):
+            terminal_status = job_status
             break
-        time.sleep(1)
+        time.sleep(2)
+    assert terminal_status is not None, (
+        "Cluster registration job never reached a terminal state — "
+        "the job pipeline (Celery worker + Redis) may be broken"
+    )
+    # Without a real Proxmox endpoint the job will fail; that is expected and acceptable.
+    # The assertion above is sufficient to confirm the pipeline is functioning.
 
     # 2. Get cluster id
     cr = api_session.get(f"{base}/clusters")

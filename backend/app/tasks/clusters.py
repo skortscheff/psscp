@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from celery import Task
 from sqlmodel import Session, select
@@ -9,6 +10,8 @@ from app.models.vm import VM, VMStatus
 from app.driver.proxmox_client import ProxmoxClient
 from app.driver.sdn_manager import SDNManager
 import sqlalchemy
+
+logger = logging.getLogger(__name__)
 
 
 def _log(db: Session, job: Job, message: str) -> None:
@@ -42,6 +45,7 @@ def register_cluster_task(self: Task, job_id: str, cluster_id: str) -> None:
             return
         _set_status(db, job, JobStatus.running, 0)
         _log(db, job, "Starting cluster registration")
+        logger.info("Starting cluster registration", extra={"job_id": job_id, "cluster_id": cluster_id})
         try:
             _log(db, job, f"Testing connectivity to {cluster.api_url}")
             client = ProxmoxClient(cluster)
@@ -57,7 +61,9 @@ def register_cluster_task(self: Task, job_id: str, cluster_id: str) -> None:
             _log(db, job, f"SDN detected: {sdn}")
             _set_status(db, job, JobStatus.success, 100)
             _log(db, job, "Cluster registration complete")
+            logger.info("Cluster registration succeeded", extra={"job_id": job_id, "cluster_id": cluster_id, "sdn_enabled": sdn})
         except Exception as exc:
+            logger.error("Cluster registration failed", extra={"job_id": job_id, "cluster_id": cluster_id}, exc_info=True)
             _log(db, job, f"Error: {exc}")
             try:
                 raise self.retry(exc=exc, countdown=2 ** self.request.retries)

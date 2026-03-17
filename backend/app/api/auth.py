@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Response, Cookie, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Cookie, status
 from sqlmodel import Session, select
 from app.core.deps import get_db, get_current_user
 from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token
 from app.core.config import get_settings
+from app.core.limiter import limiter
 from app.models.user import User
 from app.schemas.auth import LoginRequest, TokenResponse
 from jose import JWTError
@@ -12,7 +13,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest, response: Response, db: Session = Depends(get_db)):
+@limiter.limit(settings.RATE_LIMIT_LOGIN)
+def login(request: Request, body: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.exec(select(User).where(User.email == body.email)).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")

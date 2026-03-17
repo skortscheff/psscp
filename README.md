@@ -116,16 +116,30 @@ For detailed component descriptions, entity schemas, and design decisions, see [
 ### Quick Start
 
 ```bash
-docker-compose up -d
+./setup.sh
 ```
 
-Then open the web UI at `http://<host>` and follow the setup wizard.
+`setup.sh` auto-generates a `.env` with secure random secrets and starts the stack. Open the web UI at `http://<host>` and follow the setup wizard.
+
+**Manual start** (if you already have a `.env`):
+
+```bash
+docker compose up -d
+```
 
 ---
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` before starting. The following variables are required:
+`setup.sh` generates `.env` automatically. To customise, edit it before running `docker compose up`. You can also copy `.env.example` manually:
+
+```bash
+cp .env.example .env
+# edit .env, then:
+docker compose up -d
+```
+
+The following variables are required:
 
 | Variable | Description | Example |
 |---|---|---|

@@ -31,7 +31,9 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       DATABASE_URL: postgresql://psscp:${POSTGRES_PASSWORD:-psscp}@postgres:5432/psscp
       REDIS_URL: redis://redis:6379/0
@@ -54,7 +56,9 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.worker
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       DATABASE_URL: postgresql://psscp:${POSTGRES_PASSWORD:-psscp}@postgres:5432/psscp
       REDIS_URL: redis://redis:6379/0
